@@ -68,6 +68,42 @@
         </p>
       </section>
 
+      <section id="memos" class="card" aria-labelledby="memos-title">
+        <div class="memos-head">
+          <div>
+            <h2 id="memos-title" data-i18n="memoTitle">备忘录</h2>
+            <p class="help" data-i18n="memoHelp">
+              暂停的时候顺手看看今天要做的事。打勾表示完成，第二天还能在这里看到昨天的记录。
+            </p>
+          </div>
+          <p id="memo-summary" class="memo-summary" aria-live="polite"></p>
+        </div>
+        <form id="memo-form" class="memo-form">
+          <label class="sr-only" for="memo-input">添加一项待办</label>
+          <input
+            id="memo-input"
+            type="text"
+            maxlength="200"
+            autocomplete="off"
+            placeholder="添加一项待办（最多 200 字）"
+          />
+          <button class="btn btn-small btn-primary" type="submit" data-i18n="memoAdd">添加</button>
+        </form>
+        <p id="memo-feedback" class="feedback" role="status" hidden></p>
+        <ul id="memo-today" class="memo-list"></ul>
+
+        <details id="memo-yesterday-panel" class="memo-yesterday">
+          <summary>
+            <span data-i18n="memoYesterdayTitle">昨天</span>
+            <span id="memo-yesterday-summary" class="memo-summary"></span>
+          </summary>
+          <ul id="memo-yesterday" class="memo-list"></ul>
+          <button id="memo-carry" class="btn btn-small" type="button" data-i18n="memoCarry">
+            把未完成的转到今天
+          </button>
+        </details>
+      </section>
+
       <section id="words" class="card" aria-labelledby="words-title" hidden>
         <div class="words-head">
           <div>

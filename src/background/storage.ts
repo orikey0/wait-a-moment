@@ -1,3 +1,4 @@
+import { isMemoTask } from '../core/memos';
 import { isSiteRule } from '../core/rules';
 import { normalizeSettings } from '../core/settings';
 import { emptyStats } from '../core/stats';
@@ -5,6 +6,7 @@ import { isWordEntry } from '../core/words';
 import type {
   BlockRecord,
   Grant,
+  MemoTask,
   Settings,
   SiteRule,
   StatsData,
@@ -113,6 +115,11 @@ export async function loadStats(): Promise<StatsData> {
 
 export async function loadGrants(): Promise<Record<string, Grant>> {
   return asRecord<Grant>(await readLocal('grants'));
+}
+
+export async function loadMemos(): Promise<MemoTask[]> {
+  const raw = await readLocal('memos');
+  return Array.isArray(raw) ? (raw as unknown[]).filter(isMemoTask) : [];
 }
 
 // Session data (cleared when the browser restarts): interceptions, tab state and word rotation.

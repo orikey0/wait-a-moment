@@ -30,5 +30,6 @@ export async function seedDefaults(): Promise<void> {
     words,
     stats: emptyStats(),
     grants: {},
+    memos: [],
   });
 }

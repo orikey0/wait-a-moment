@@ -368,7 +368,13 @@ function exportBackup(current: Snapshot): void {
     current.words.map(({ id, ...entry }) => [id, entry]),
   );
   const content = buildBackup(
-    { rules: current.rules, settings: current.settings, words, stats: current.stats },
+    {
+      rules: current.rules,
+      settings: current.settings,
+      words,
+      stats: current.stats,
+      memos: current.memos,
+    },
     Date.now(),
   );
   download(`wait-a-moment-backup-${dayKey(Date.now())}.json`, content, 'application/json');

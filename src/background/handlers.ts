@@ -4,7 +4,22 @@ import { parseWordCsv } from '../core/csv';
 import { CURRENT_SCHEMA_VERSION } from '../core/migration';
 import { MAX_RULES, createRule, findDuplicate, normalizeRuleInput } from '../core/rules';
 import { applySettingsPatch } from '../core/settings';
-import { dayKey, emptyStats, pruneStats, recordEvent, type StatsEvent } from '../core/stats';
+import {
+  addTask,
+  carryUnfinished,
+  pruneTasks,
+  removeTask,
+  setTaskDone,
+  type MemoError,
+} from '../core/memos';
+import {
+  dayKey,
+  emptyStats,
+  pruneStats,
+  recordEvent,
+  shiftDay,
+  type StatsEvent,
+} from '../core/stats';
 import { mergeGrant, reconcileWaitWindow, remainingWaitMs } from '../core/timing';
 import { applyMark, isMark, mergeWords } from '../core/words';
 import sampleWordsCsv from '../data/sample-words.csv';
@@ -18,6 +33,7 @@ import {
   exclusive,
   loadBlocks,
   loadGrants,
+  loadMemos,
   loadRules,
   loadSettings,
   loadStats,
@@ -45,6 +61,11 @@ const REQUEST_TYPES: readonly string[] = [
   'words.clear',
   'stats.clear',
   'data.clear',
+  'memo.list',
+  'memo.add',
+  'memo.toggle',
+  'memo.remove',
+  'memo.carryOver',
   'data.restore',
 ];
 
@@ -103,6 +124,16 @@ async function dispatch(request: Request): Promise<AnyReply> {
       return clearStats();
     case 'data.clear':
       return clearAll();
+    case 'memo.list':
+      return listMemos();
+    case 'memo.add':
+      return addMemo(request.text);
+    case 'memo.toggle':
+      return toggleMemo(request.id, request.done);
+    case 'memo.remove':
+      return removeMemo(request.id);
+    case 'memo.carryOver':
+      return carryOverMemos();
     case 'data.restore':
       return restoreBackup(request.text);
   }
@@ -251,7 +282,11 @@ async function snapshot(): Promise<Replies['admin.snapshot']> {
     loadGrants(),
   ]);
   const views: WordView[] = Object.entries(words).map(([id, entry]) => ({ ...entry, id }));
-  return { ok: true, snapshot: { now: Date.now(), rules, settings, words: views, stats, grants } };
+  const memos = await loadMemos();
+  return {
+    ok: true,
+    snapshot: { now: Date.now(), rules, settings, words: views, stats, grants, memos },
+  };
 }
 
 async function addRule(input: string, includeSubdomains: boolean): Promise<Replies['rules.add']> {
@@ -356,15 +391,82 @@ async function restoreBackup(text: string): Promise<Replies['data.restore']> {
   if (typeof text !== 'string' || text.length > MAX_BACKUP_LENGTH) return fail('invalid_backup');
   const parsed = parseBackup(text);
   if (!parsed.ok) return fail(parsed.error);
-  const { rules, settings, words, stats } = parsed.data;
+  const { rules, settings, words, stats, memos } = parsed.data;
   await writeLocal({
     schemaVersion: CURRENT_SCHEMA_VERSION,
     rules,
     settings,
     words,
     stats,
+    memos,
     grants: {},
   });
   await clearSession();
   return { ok: true, rules: rules.length, words: Object.keys(words).length };
+}
+
+// Daily memos
+
+const MEMO_ERRORS: Record<MemoError, ErrorCode> = {
+  empty: 'memo_empty',
+  too_long: 'memo_too_long',
+  control_character: 'memo_invalid_text',
+  too_many_tasks: 'too_many_memos',
+  not_found: 'not_found',
+};
+
+/** Today and yesterday only; older tasks stay stored (within the retention window) but are not shown. */
+async function listMemos(): Promise<Replies['memo.list']> {
+  const today = dayKey(Date.now());
+  const yesterday = shiftDay(today, -1);
+  const tasks = await loadMemos();
+  return {
+    ok: true,
+    todayKey: today,
+    yesterdayKey: yesterday,
+    tasks: tasks.filter((task) => task.day === today || task.day === yesterday),
+  };
+}
+
+async function addMemo(text: string): Promise<Replies['memo.add']> {
+  if (typeof text !== 'string') return fail('invalid_request');
+  const now = Date.now();
+  const today = dayKey(now);
+  const result = addTask(await loadMemos(), { text, day: today, id: crypto.randomUUID(), now });
+  if (!result.ok) return fail(MEMO_ERRORS[result.error]);
+  await writeLocal({ memos: pruneTasks(result.tasks, today) });
+  return { ok: true, task: result.task };
+}
+
+async function toggleMemo(id: string, done: boolean): Promise<Replies['memo.toggle']> {
+  if (typeof id !== 'string' || typeof done !== 'boolean') return fail('invalid_request');
+  const now = Date.now();
+  const result = setTaskDone(await loadMemos(), id, done, now);
+  if (!result.ok) return fail(MEMO_ERRORS[result.error]);
+  await writeLocal({ memos: pruneTasks(result.tasks, dayKey(now)) });
+  return { ok: true };
+}
+
+async function removeMemo(id: string): Promise<Replies['memo.remove']> {
+  if (typeof id !== 'string') return fail('invalid_request');
+  const now = Date.now();
+  const result = removeTask(await loadMemos(), id);
+  if (!result.ok) return fail(MEMO_ERRORS[result.error]);
+  await writeLocal({ memos: pruneTasks(result.tasks, dayKey(now)) });
+  return { ok: true };
+}
+
+/** Copies yesterday's unfinished tasks to today, skipping any already on today's list. */
+async function carryOverMemos(): Promise<Replies['memo.carryOver']> {
+  const now = Date.now();
+  const today = dayKey(now);
+  const result = carryUnfinished(
+    await loadMemos(),
+    shiftDay(today, -1),
+    today,
+    () => crypto.randomUUID(),
+    now,
+  );
+  await writeLocal({ memos: pruneTasks(result.tasks, today) });
+  return { ok: true, added: result.added };
 }

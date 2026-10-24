@@ -1,5 +1,15 @@
 import type { CsvIssue } from '../core/csv';
-import type { Grant, Mark, Motion, Settings, SiteRule, StatsData, Theme, WordEntry } from './types';
+import type {
+  Grant,
+  Mark,
+  MemoTask,
+  Motion,
+  Settings,
+  SiteRule,
+  StatsData,
+  Theme,
+  WordEntry,
+} from './types';
 
 export type ErrorCode =
   | 'internal'
@@ -21,7 +31,11 @@ export type ErrorCode =
   | 'invalid_words'
   | 'invalid_backup'
   | 'incompatible_store'
-  | 'storage_failed';
+  | 'storage_failed'
+  | 'memo_empty'
+  | 'memo_too_long'
+  | 'memo_invalid_text'
+  | 'too_many_memos';
 
 export interface WordView extends WordEntry {
   id: string;
@@ -56,6 +70,7 @@ export interface Snapshot {
   words: WordView[];
   stats: StatsData;
   grants: Record<string, Grant>;
+  memos: MemoTask[];
 }
 
 export type Failure = {
@@ -83,6 +98,11 @@ export type Request =
   | { type: 'words.clear' }
   | { type: 'stats.clear' }
   | { type: 'data.clear' }
+  | { type: 'memo.list' }
+  | { type: 'memo.add'; text: string }
+  | { type: 'memo.toggle'; id: string; done: boolean }
+  | { type: 'memo.remove'; id: string }
+  | { type: 'memo.carryOver' }
   | { type: 'data.restore'; text: string };
 
 export interface Replies {
@@ -101,6 +121,11 @@ export interface Replies {
   'words.clear': Result;
   'stats.clear': Result;
   'data.clear': Result;
+  'memo.list': Result<{ todayKey: string; yesterdayKey: string; tasks: MemoTask[] }>;
+  'memo.add': Result<{ task: MemoTask }>;
+  'memo.toggle': Result;
+  'memo.remove': Result;
+  'memo.carryOver': Result<{ added: number }>;
   'data.restore': Result<{ rules: number; words: number }>;
 }
 

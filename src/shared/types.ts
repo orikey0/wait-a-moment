@@ -78,3 +78,13 @@ export interface DayStats {
 export interface StatsData {
   days: Record<string, DayStats>;
 }
+
+/** A daily memo. `day` is the local calendar day the task belongs to (YYYY-MM-DD). */
+export interface MemoTask {
+  id: string;
+  text: string;
+  day: string;
+  done: boolean;
+  createdAt: number;
+  doneAt?: number;
+}

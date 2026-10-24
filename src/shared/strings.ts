@@ -125,6 +125,21 @@ export const strings = {
   invalidEncoding: '文件不是有效的 UTF-8 编码，请另存为 UTF-8 后再导入。',
   invalidFile: '文件无法读取。',
   cleared: '已清除。',
+  memoTitle: '备忘录',
+  memoHelp: '暂停的时候顺手看看今天要做的事。打勾表示完成，第二天还能在这里看到昨天的记录。',
+  memoAdd: '添加',
+  memoEmptyToday: '今天还没有备忘。',
+  memoEmptyYesterday: '昨天没有备忘。',
+  memoDone: '已完成',
+  memoOpen: '未完成',
+  memoDelete: '删除',
+  memoYesterdayTitle: '昨天',
+  memoCarry: '把未完成的转到今天',
+  memoNothingToCarry: '昨天没有未完成的事项。',
+  memoSummary: (done: number, total: number): string => `已完成 ${done} / ${total}`,
+  memoCarried: (added: number): string => `已转入 ${added} 项。`,
+  memoAdded: '已添加。',
+  memoDeleted: '已删除。',
 } as const;
 
 export const errorMessages: Record<ErrorCode, string> = {
@@ -148,6 +163,10 @@ export const errorMessages: Record<ErrorCode, string> = {
   invalid_backup: '备份文件格式不正确，没有导入。',
   incompatible_store: '备份来自更新的版本，无法导入。',
   storage_failed: '保存失败，可能是浏览器存储空间不足。请释放空间后重试。',
+  memo_empty: '备忘内容不能为空。',
+  memo_too_long: '备忘最多 200 个字。',
+  memo_invalid_text: '备忘里包含不可见的控制字符。',
+  too_many_memos: '这一天的备忘已经达到上限（50 项）。',
 };
 
 export function csvIssueMessage(issue: CsvIssue): string {

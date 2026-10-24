@@ -1,8 +1,9 @@
 import type { BlockView, BlockWordView } from '../shared/messages';
 import { errorMessages, strings } from '../shared/strings';
-import type { Mark } from '../shared/types';
+import type { Mark, MemoTask } from '../shared/types';
 import { CLOCK_TOLERANCE_MS } from '../core/timing';
 import { MOVE_RADIUS_PX, nextSpot, offsetPx, type Spot } from '../core/motion';
+import { countDone, tasksForDay } from '../core/memos';
 import { byId, el, localize } from './dom';
 import { send } from './messaging';
 import { applyTheme, prefersReducedMotion } from './theme';
@@ -29,6 +30,14 @@ const wordsSection = byId('words');
 const wordList = byId('word-list');
 const closeWordsButton = byId<HTMLButtonElement>('close-words');
 const announcer = byId('sr-announce');
+const memoForm = byId<HTMLFormElement>('memo-form');
+const memoInput = byId<HTMLInputElement>('memo-input');
+const memoFeedback = byId('memo-feedback');
+const memoSummary = byId('memo-summary');
+const memoToday = byId('memo-today');
+const memoYesterdaySummary = byId('memo-yesterday-summary');
+const memoYesterday = byId('memo-yesterday');
+const memoCarry = byId<HTMLButtonElement>('memo-carry');
 
 let view: BlockView | null = null;
 let revealed = false;
@@ -40,6 +49,8 @@ let spot: Spot = { fx: 0.5, fy: 0.5 };
 
 async function start(): Promise<void> {
   localize(document.body);
+  wireMemos();
+  void loadMemos();
   if (!blockId) {
     showUnavailable();
     return;
@@ -288,6 +299,114 @@ function setMarked(card: HTMLElement, mark: Mark): void {
   }
   const status = card.querySelector('.word-status');
   if (status) status.textContent = strings.markedAs(strings.markLabel(mark));
+}
+
+// Daily memos: today's checklist, plus yesterday's record. They work without a valid interception.
+
+function wireMemos(): void {
+  memoForm.addEventListener('submit', (event) => void addMemo(event));
+  memoCarry.addEventListener('click', () => void carryOver());
+}
+
+async function loadMemos(): Promise<void> {
+  const reply = await send({ type: 'memo.list' });
+  if (!reply.ok) {
+    showMemoFeedback(errorMessages[reply.error], true);
+    return;
+  }
+  renderMemos(
+    tasksForDay(reply.tasks, reply.todayKey),
+    tasksForDay(reply.tasks, reply.yesterdayKey),
+  );
+}
+
+function renderMemos(today: MemoTask[], yesterday: MemoTask[]): void {
+  memoSummary.textContent = strings.memoSummary(countDone(today), today.length);
+  memoToday.replaceChildren(
+    ...(today.length === 0
+      ? [memoEmpty(strings.memoEmptyToday)]
+      : today.map((task) => todayItem(task))),
+  );
+  memoYesterdaySummary.textContent = strings.memoSummary(countDone(yesterday), yesterday.length);
+  memoYesterday.replaceChildren(
+    ...(yesterday.length === 0
+      ? [memoEmpty(strings.memoEmptyYesterday)]
+      : yesterday.map((task) => yesterdayItem(task))),
+  );
+  // Nothing to carry over when every task from yesterday was finished.
+  memoCarry.disabled = yesterday.every((task) => task.done);
+}
+
+function memoEmpty(text: string): HTMLElement {
+  return el('li', { className: 'empty', text });
+}
+
+function todayItem(task: MemoTask): HTMLElement {
+  const checkbox = el('input', { attrs: { type: 'checkbox' } });
+  checkbox.checked = task.done;
+  checkbox.addEventListener('change', () => void toggleMemo(task.id, checkbox.checked));
+  return el('li', { className: 'memo-item', attrs: { 'data-done': String(task.done) } }, [
+    el('label', { className: 'memo-check' }, [
+      checkbox,
+      el('span', { className: 'memo-text', text: task.text }),
+    ]),
+    el('button', {
+      className: 'btn btn-small btn-danger',
+      attrs: { type: 'button', 'aria-label': `${strings.memoDelete}：${task.text}` },
+      text: strings.memoDelete,
+      on: { click: () => void removeMemo(task.id) },
+    }),
+  ]);
+}
+
+/** Yesterday is a read-only record: each item states whether it was finished. */
+function yesterdayItem(task: MemoTask): HTMLElement {
+  return el('li', { className: 'memo-item', attrs: { 'data-done': String(task.done) } }, [
+    el('span', { className: 'memo-status', text: task.done ? strings.memoDone : strings.memoOpen }),
+    el('span', { className: 'memo-text', text: task.text }),
+  ]);
+}
+
+async function addMemo(event: SubmitEvent): Promise<void> {
+  event.preventDefault();
+  const reply = await send({ type: 'memo.add', text: memoInput.value });
+  if (!reply.ok) {
+    showMemoFeedback(errorMessages[reply.error], true);
+    return;
+  }
+  memoInput.value = '';
+  showMemoFeedback(strings.memoAdded);
+  await loadMemos();
+}
+
+async function toggleMemo(id: string, done: boolean): Promise<void> {
+  const reply = await send({ type: 'memo.toggle', id, done });
+  if (!reply.ok) showMemoFeedback(errorMessages[reply.error], true);
+  await loadMemos();
+}
+
+async function removeMemo(id: string): Promise<void> {
+  const reply = await send({ type: 'memo.remove', id });
+  showMemoFeedback(reply.ok ? strings.memoDeleted : errorMessages[reply.error], !reply.ok);
+  await loadMemos();
+}
+
+async function carryOver(): Promise<void> {
+  const reply = await send({ type: 'memo.carryOver' });
+  if (!reply.ok) {
+    showMemoFeedback(errorMessages[reply.error], true);
+  } else {
+    showMemoFeedback(
+      reply.added > 0 ? strings.memoCarried(reply.added) : strings.memoNothingToCarry,
+    );
+  }
+  await loadMemos();
+}
+
+function showMemoFeedback(message: string, isError = false): void {
+  memoFeedback.textContent = message;
+  memoFeedback.dataset.tone = isError ? 'error' : 'ok';
+  memoFeedback.hidden = message === '';
 }
 
 void start();

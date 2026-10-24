@@ -1,5 +1,6 @@
 import type {
   DayStats,
+  MemoTask,
   SiteCounters,
   Settings,
   SiteRule,
@@ -7,6 +8,7 @@ import type {
   WordEntry,
 } from '../shared/types';
 import { MAX_MEANING_LENGTH, MAX_WORD_LENGTH, MAX_WORD_ROWS } from './csv';
+import { MAX_MEMO_TASKS, isMemoTask } from './memos';
 import { MAX_RULES, normalizeRuleInput } from './rules';
 import { normalizeSettings } from './settings';
 import { isWordEntry } from './words';
@@ -22,6 +24,7 @@ export interface BackupData {
   settings: Settings;
   words: Record<string, WordEntry>;
   stats: StatsData;
+  memos: MemoTask[];
 }
 
 export type BackupParseResult =
@@ -58,10 +61,11 @@ export function parseBackup(text: string): BackupParseResult {
   const rules = parseRules(payload.data.rules);
   const words = parseWords(payload.data.words);
   const stats = parseStats(payload.data.stats);
-  if (!rules || !words || !stats) return invalid();
+  const memos = parseMemos(payload.data.memos);
+  if (!rules || !words || !stats || !memos) return invalid();
   return {
     ok: true,
-    data: { rules, settings: normalizeSettings(payload.data.settings), words, stats },
+    data: { rules, settings: normalizeSettings(payload.data.settings), words, stats, memos },
   };
 }
 
@@ -141,4 +145,13 @@ function parseStats(value: unknown): StatsData | null {
     days[key] = { wordActions: day.wordActions, sites };
   }
   return { days };
+}
+
+/** Backups made before daily memos existed have no `memos` field; they load with an empty list. */
+function parseMemos(value: unknown): MemoTask[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > MAX_MEMO_TASKS) return null;
+  const items: unknown[] = value;
+  if (!items.every(isMemoTask)) return null;
+  return items;
 }
