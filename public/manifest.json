@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "等一下",
+  "short_name": "等一下",
+  "version": "0.1.0",
+  "description": "访问容易分心的网站时，先等一等、再做选择：支持倒计时、临时放行、单词复习与本地统计。",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "等一下 · 设置"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "permissions": ["storage", "webNavigation"]
+}

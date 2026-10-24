@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>等一下 · 设置</title>
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/options.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-inner">
+        <div>
+          <p class="eyebrow">等一下</p>
+          <h1 data-i18n="pageTitle">等一下 · 设置</h1>
+        </div>
+        <label class="inline pause">
+          <input id="paused" type="checkbox" />
+          <span data-i18n="pauseLabel">暂停所有拦截</span>
+        </label>
+      </div>
+      <p class="help" data-i18n="pauseHelp">开启后所有网站都不会被拦截，规则和统计保持不变。</p>
+      <p id="pause-feedback" class="feedback" role="status" hidden></p>
+      <p id="store-banner" class="feedback" data-tone="error" role="alert" hidden></p>
+    </header>
+
+    <main class="page">
+      <section class="card" aria-labelledby="rules-title">
+        <h2 id="rules-title" data-i18n="rulesTitle">网站规则</h2>
+        <p class="help" data-i18n="rulesHelp">
+          默认包含子域名。可以只拦截某个路径，例如 zhihu.com/hot。端口、查询参数和锚点会被忽略。
+        </p>
+        <form id="rule-form" class="inline-form">
+          <input
+            id="rule-input"
+            type="text"
+            aria-label="网站域名"
+            placeholder="例如 example.com 或 example.com/path"
+            autocomplete="off"
+            spellcheck="false"
+            required
+          />
+          <label class="inline">
+            <input id="rule-subdomains" type="checkbox" checked />
+            <span data-i18n="ruleSubdomains">包含子域名</span>
+          </label>
+          <button class="btn btn-primary" type="submit" data-i18n="ruleAdd">添加规则</button>
+        </form>
+        <p id="rule-feedback" class="feedback" role="status" hidden></p>
+        <ul id="rule-list" class="rule-list"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="wait-title">
+        <h2 id="wait-title" data-i18n="waitTitle">等待与放行</h2>
+        <form id="wait-form" class="grid-form">
+          <label class="field">
+            <span data-i18n="waitSecondsLabel">等待秒数（0–120，0 表示不强制等待）</span>
+            <input id="wait-seconds" type="number" min="0" max="120" step="1" required />
+          </label>
+          <label class="field">
+            <span data-i18n="grantLabel">放行时长选项（分钟，用逗号分隔，最多 6 个）</span>
+            <input id="grant-minutes" type="text" required />
+          </label>
+          <label class="inline span-2">
+            <input id="move-buttons" type="checkbox" />
+            <span data-i18n="moveLabel">显示移动按钮（降低惯性点击）</span>
+          </label>
+          <label class="field">
+            <span data-i18n="motionLabel">动画设置</span>
+            <select id="motion">
+              <option value="system" data-i18n="motionSystem">跟随系统</option>
+              <option value="reduced" data-i18n="motionReduced">减少动态效果</option>
+              <option value="full" data-i18n="motionFull">保留动效</option>
+            </select>
+          </label>
+          <label class="field">
+            <span data-i18n="themeLabel">外观</span>
+            <select id="theme">
+              <option value="system" data-i18n="themeSystem">跟随系统</option>
+              <option value="light" data-i18n="themeLight">浅色</option>
+              <option value="dark" data-i18n="themeDark">深色</option>
+            </select>
+          </label>
+          <div class="actions span-2">
+            <button class="btn btn-primary" type="submit" data-i18n="saveSettings">保存设置</button>
+          </div>
+          <p id="wait-feedback" class="feedback span-2" role="status" hidden></p>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="words-title">
+        <h2 id="words-title" data-i18n="wordsTitleSettings">单词学习</h2>
+        <label class="inline">
+          <input id="words-enabled" type="checkbox" />
+          <span data-i18n="wordsEnabledLabel">在等待页显示单词学习</span>
+        </label>
+        <p id="words-summary" class="help"></p>
+        <div class="field">
+          <label for="words-file" data-i18n="wordsImportLabel">
+            导入 CSV 词表（UTF-8，需包含 word 和 meaning 两列）
+          </label>
+          <input id="words-file" type="file" accept=".csv,text/csv" />
+        </div>
+        <div class="actions">
+          <button id="words-import" class="btn btn-primary" type="button" data-i18n="wordsImport">
+            导入词表
+          </button>
+          <button id="words-restore" class="btn" type="button" data-i18n="wordsRestore">
+            恢复示例词表
+          </button>
+          <button id="words-clear" class="btn btn-danger" type="button" data-i18n="wordsClear">
+            清空词表
+          </button>
+        </div>
+        <p id="words-feedback" class="feedback" role="status" hidden></p>
+      </section>
+
+      <section class="card" aria-labelledby="stats-title">
+        <h2 id="stats-title" data-i18n="statsTitle">数据统计</h2>
+        <label class="inline">
+          <input id="stats-enabled" type="checkbox" />
+          <span data-i18n="statsEnabledLabel">记录统计数据</span>
+        </label>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <caption class="sr-only" data-i18n="statsTitle">
+              数据统计
+            </caption>
+            <thead id="stats-head"></thead>
+            <tbody id="stats-rows"></tbody>
+          </table>
+        </div>
+        <p class="help" data-i18n="statsDefinitions">
+          放弃比例 = 放弃次数 ÷（放弃次数 +
+          放行次数）。授权时长是放行设定的时长，不等于实际浏览时长；放弃浏览也不代表永久避免访问。
+        </p>
+
+        <h3 data-i18n="statsTrendTitle">最近 7 天拦截次数</h3>
+        <figure class="trend">
+          <div id="trend-plot" class="trend-plot" aria-hidden="true">
+            <p id="trend-tip" class="trend-tip" hidden></p>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table compact">
+              <caption class="sr-only" data-i18n="statsTrendTitle">
+                最近 7 天拦截次数
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">日期</th>
+                  <th scope="col">拦截</th>
+                  <th scope="col">放弃</th>
+                  <th scope="col">放行</th>
+                </tr>
+              </thead>
+              <tbody id="trend-rows"></tbody>
+            </table>
+          </div>
+        </figure>
+
+        <h3 data-i18n="statsSitesTitle">按网站（最近 30 天）</h3>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="statsSite">网站</th>
+                <th scope="col">拦截</th>
+                <th scope="col">放弃</th>
+                <th scope="col">放行</th>
+                <th scope="col">放弃比例</th>
+                <th scope="col">授权分钟</th>
+              </tr>
+            </thead>
+            <tbody id="sites-rows"></tbody>
+          </table>
+        </div>
+
+        <div class="actions">
+          <button id="stats-export-csv" class="btn" type="button" data-i18n="statsExportCsv">
+            导出 CSV
+          </button>
+          <button id="stats-export-json" class="btn" type="button" data-i18n="statsExportJson">
+            导出 JSON
+          </button>
+          <button id="stats-clear" class="btn btn-danger" type="button" data-i18n="statsClear">
+            清除统计数据
+          </button>
+        </div>
+        <p id="stats-feedback" class="feedback" role="status" hidden></p>
+      </section>
+
+      <section class="card" aria-labelledby="data-title">
+        <h2 id="data-title" data-i18n="dataTitle">数据与隐私</h2>
+        <p class="help" data-i18n="dataHelp">
+          所有数据只保存在本机浏览器中，不会上传到任何服务器。
+        </p>
+        <div class="actions">
+          <button id="data-export" class="btn" type="button" data-i18n="dataExport">
+            导出全部数据（JSON）
+          </button>
+        </div>
+        <div class="field">
+          <label for="data-file" data-i18n="dataImportLabel">选择备份文件</label>
+          <input id="data-file" type="file" accept="application/json,.json" />
+        </div>
+        <div class="actions">
+          <button id="data-import" class="btn" type="button" data-i18n="dataImport">
+            导入备份
+          </button>
+          <button id="data-clear" class="btn btn-danger" type="button" data-i18n="dataClear">
+            清除全部本地数据
+          </button>
+        </div>
+        <p id="data-feedback" class="feedback" role="status" hidden></p>
+      </section>
+    </main>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

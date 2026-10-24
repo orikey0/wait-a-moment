@@ -1,0 +1,123 @@
+.countdown {
+  margin: 10px 0 0;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  height: 8px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.progress-bar {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 250ms linear;
+}
+
+.gate-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* The play field is the only area the proceed button may move in. The abandon button never moves. */
+.playfield {
+  position: relative;
+  height: 84px;
+  border-radius: 12px;
+  background: var(--field);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.proceed {
+  min-width: 10rem;
+}
+
+.proceed[data-movable='true'] {
+  position: absolute;
+  transition:
+    left 180ms ease,
+    top 180ms ease;
+}
+
+.durations {
+  margin-top: 18px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.words {
+  margin-top: 16px;
+}
+
+.words-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.word-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.word-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.word-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.word-meaning {
+  color: var(--ink-2);
+}
+
+.word-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.word-status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+/* An unmarked card does not reserve an empty line for its status. */
+.word-status:empty {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar,
+  .proceed[data-movable='true'] {
+    transition: none;
+  }
+}

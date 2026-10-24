@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>等一下</title>
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/blocked.css" />
+  </head>
+  <body>
+    <main class="page narrow">
+      <section id="gate" class="card" aria-labelledby="gate-title">
+        <p class="eyebrow">等一下</p>
+        <h1 id="gate-title" data-i18n="gateTitle">先停一下，再决定要不要打开</h1>
+        <p class="target">
+          <span data-i18n="targetLabel">即将访问</span>
+          <strong id="target-host"></strong>
+        </p>
+
+        <p id="countdown" class="countdown" aria-hidden="true"></p>
+        <div
+          id="progress"
+          class="progress"
+          role="progressbar"
+          aria-label="等待进度"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <span id="progress-bar" class="progress-bar"></span>
+        </div>
+
+        <div class="gate-actions">
+          <button id="abandon" class="btn btn-primary btn-wide" type="button" data-i18n="abandon">
+            本次不浏览
+          </button>
+          <div id="playfield" class="playfield">
+            <button
+              id="proceed"
+              class="btn btn-ghost proceed"
+              type="button"
+              disabled
+              aria-describedby="countdown"
+              data-movable="false"
+              data-i18n="proceed"
+            >
+              等待后浏览
+            </button>
+          </div>
+        </div>
+
+        <section id="durations" class="durations" aria-labelledby="durations-title" hidden>
+          <h2 id="durations-title" data-i18n="durationsTitle">选择临时放行时长</h2>
+          <p class="help" data-i18n="durationsHelp">
+            放行期间同一网站不再拦截；到期后再次访问会重新拦截。
+          </p>
+          <div id="duration-buttons" class="chips"></div>
+        </section>
+
+        <p id="error" class="feedback" data-tone="error" role="alert" hidden></p>
+        <p><a id="go-target" class="link" href="#" hidden data-i18n="goTarget">前往网站</a></p>
+      </section>
+
+      <!-- Kept outside the gate, because showing the unavailable state hides the gate. -->
+      <section id="unavailable" class="card" role="alert" hidden>
+        <p class="feedback" data-tone="error" data-i18n="unavailable">
+          这个拦截页面已失效（例如浏览器已经重启）。可以关闭它，再重新访问目标网站。
+        </p>
+      </section>
+
+      <section id="words" class="card" aria-labelledby="words-title" hidden>
+        <div class="words-head">
+          <div>
+            <h2 id="words-title" data-i18n="wordsTitle">顺便复习几个单词</h2>
+            <p class="help" data-i18n="wordsHelp">单词学习不影响等待和放行，可以跳过。</p>
+          </div>
+          <button id="close-words" class="btn btn-small" type="button" data-i18n="closeWords">
+            关闭单词学习
+          </button>
+        </div>
+        <ul id="word-list" class="word-list"></ul>
+      </section>
+
+      <p id="sr-announce" class="sr-only" aria-live="polite"></p>
+    </main>
+    <script type="module" src="blocked.js"></script>
+  </body>
+</html>
